@@ -62,7 +62,7 @@ jobs:
           mkdir -p artifacts
           echo "${ECR_REGISTRY}/${ECR_REPOSITORY}:latest" > artifacts/image-uri.txt
 
-      # 4️⃣ Read the Docker image URI into an output variable
+      #  Read the Docker image URI into an output variable
       - name: Read image URI
         id: image
         run: |
