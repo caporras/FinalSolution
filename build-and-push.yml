@@ -1,0 +1,48 @@
+name: Build and push to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }} 
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }} 
+          IMAGE_TAG: latest
+        run: |
+          echo "🔨 Construyendo imagen Docker..."
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG ./docker
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "✅ Imagen subida a ECR: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Save image URI to file
+        run: echo "${{ secrets.ECR_REGISTRY }}/${{ secrets.ECR_REPOSITORY }}:latest" > image-uri.txt
+
+      - name: Upload image URI artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: image-uri
+          path: image-uri.txt
